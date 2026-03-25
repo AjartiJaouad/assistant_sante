@@ -11,3 +11,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 });
+// Gestion des Médecins
+    Route::get('/doctors', [App\Http\Controllers\DoctorController::class, 'index']);
+    Route::get('/doctors/search', [App\Http\Controllers\DoctorController::class, 'search']);
+    Route::get('/doctors/{id}', [App\Http\Controllers\DoctorController::class, 'show']);
