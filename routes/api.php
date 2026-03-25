@@ -15,3 +15,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctors', [App\Http\Controllers\DoctorController::class, 'index']);
     Route::get('/doctors/search', [App\Http\Controllers\DoctorController::class, 'search']);
     Route::get('/doctors/{id}', [App\Http\Controllers\DoctorController::class, 'show']);
+Route::apiResource('appointments', App\Http\Controllers\AppointmentController::class)->except(['show', 'update']);
