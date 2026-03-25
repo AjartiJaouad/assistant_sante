@@ -16,3 +16,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctors/search', [App\Http\Controllers\DoctorController::class, 'search']);
     Route::get('/doctors/{id}', [App\Http\Controllers\DoctorController::class, 'show']);
 Route::apiResource('appointments', App\Http\Controllers\AppointmentController::class)->except(['show', 'update']);
+// Intelligence Artificielle
+    Route::post('/ai-advice', [App\Http\Controllers\AiAdviceController::class, 'generateAdvice']);
+    Route::get('/ai-advice', [App\Http\Controllers\AiAdviceController::class, 'index']);
