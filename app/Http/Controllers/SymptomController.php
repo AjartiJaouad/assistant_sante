@@ -24,7 +24,7 @@ class SymptomController extends Controller
     public function index(Request $request)
     {
         $symptoms = $request->user()->symptoms()->orderBy('date_recorded', 'desc')->get();
-        return $this->successResponse($symptoms, 'Symptômes récupérés avec succès');
+        return $this->success($symptoms, 'Symptômes récupérés avec succès');
     }
     /**
      * @OA\Post(
@@ -50,7 +50,7 @@ class SymptomController extends Controller
     public function store(StoreSymptomRequest $request)
     {
         $symptom = $request->user()->symptoms()->create($request->validated());
-        return $this->successResponse($symptom, 'Symptôme enregistré avec succès', 201);
+        return $this->success($symptom, 'Symptôme enregistré avec succès', 201);
     }
 
     // Détail d'un symptôme
@@ -59,10 +59,10 @@ class SymptomController extends Controller
         $symptom = $request->user()->symptoms()->find($id);
 
         if (!$symptom) {
-            return $this->errorResponse([], 'Symptôme introuvable', 404);
+            return $this->error([], 'Symptôme introuvable', 404);
         }
 
-        return $this->successResponse($symptom, 'Détail du symptôme récupéré');
+        return $this->success($symptom, 'Détail du symptôme récupéré');
     }
 
     // Modifier un symptôme
@@ -71,11 +71,11 @@ class SymptomController extends Controller
         $symptom = $request->user()->symptoms()->find($id);
 
         if (!$symptom) {
-            return $this->errorResponse([], 'Symptôme introuvable', 404);
+            return $this->error([], 'Symptôme introuvable', 404);
         }
 
         $symptom->update($request->validated());
-        return $this->successResponse($symptom, 'Symptôme mis à jour avec succès');
+        return $this->success($symptom, 'Symptôme mis à jour avec succès');
     }
 
     // Supprimer un symptôme
@@ -84,10 +84,10 @@ class SymptomController extends Controller
         $symptom = $request->user()->symptoms()->find($id);
 
         if (!$symptom) {
-            return $this->errorResponse([], 'Symptôme introuvable', 404);
+            return $this->error([], 'Symptôme introuvable', 404);
         }
 
         $symptom->delete();
-        return $this->successResponse([], 'Symptôme supprimé avec succès');
+        return $this->success([], 'Symptôme supprimé avec succès');
     }
 }
