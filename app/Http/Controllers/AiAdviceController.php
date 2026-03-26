@@ -6,12 +6,24 @@ use App\Models\AiAdvice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Traits\ApiResponse;
+use OpenApi\Attributes as OA;
 
 class AiAdviceController extends Controller
 {
     use ApiResponse;
 
     // US-06 & US-07 : Générer un conseil et le sauvegarder
+    #[OA\Post(
+        path: '/api/ai-advice',
+        summary: 'Generer un conseil sante via IA Gemini',
+        tags: ['Intelligence Artificielle'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 201, description: 'Conseil genere et sauvegarde'),
+            new OA\Response(response: 400, description: 'Aucun symptome trouve'),
+            new OA\Response(response: 500, description: 'Erreur API Gemini'),
+        ]
+    )]
     public function generateAdvice(Request $request)
     {
         $user = $request->user();
@@ -20,7 +32,7 @@ class AiAdviceController extends Controller
         $symptoms = $user->symptoms()->latest()->take(5)->get();
 
         if ($symptoms->isEmpty()) {
-            return $this->errorResponse([], 'Vous n\'avez aucun symptôme enregistré à analyser.', 400);
+            return $this->error([], 'Vous n\'avez aucun symptôme enregistré à analyser.', 400);
         }
 
         // Préparer le prompt pour l'IA
@@ -51,20 +63,30 @@ class AiAdviceController extends Controller
                     'generated_at' => now(),
                 ]);
 
-                return $this->successResponse($aiAdvice, 'Conseil généré avec succès', 201);
+                return $this->success($aiAdvice, 'Conseil généré avec succès', 201);
             }
 
-            return $this->errorResponse([], 'Échec de la connexion à l\'IA', 500);
+            return $this->error([], 'Échec de la connexion à l\'IA', 500);
 
         } catch (\Exception $e) {
-            return $this->errorResponse([], 'Erreur technique : ' . $e->getMessage(), 500);
+            return $this->error([], 'Erreur technique : ' . $e->getMessage(), 500);
         }
     }
 
     // Afficher l'historique des conseils
+    #[OA\Get(
+        path: '/api/ai-advice',
+        summary: 'Consulter l historique des conseils IA',
+        tags: ['Intelligence Artificielle'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Liste de l historique des conseils'),
+            new OA\Response(response: 401, description: 'Non autorise'),
+        ]
+    )]
     public function index(Request $request)
     {
         $advices = $request->user()->aiAdvices()->orderBy('generated_at', 'desc')->get();
-        return $this->successResponse($advices, 'Historique des conseils IA');
+        return $this->success($advices, 'Historique des conseils IA');
     }
 }
