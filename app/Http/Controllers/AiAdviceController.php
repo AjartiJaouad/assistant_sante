@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\GenerateAiAdviceRequest;
 use App\Models\AiAdvice;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use App\Traits\ApiResponse;
 use OpenApi\Attributes as OA;
 
 class AiAdviceController extends Controller
 {
     use ApiResponse;
 
-    // US-06 & US-07 : Générer un conseil et le sauvegarder
     #[OA\Post(
-        path: '/api/ai-advice',
+        path: '/api/ai/health-advice',
         summary: 'Generer un conseil sante via IA Gemini',
         tags: ['Intelligence Artificielle'],
         security: [['bearerAuth' => []]],
@@ -24,58 +25,93 @@ class AiAdviceController extends Controller
             new OA\Response(response: 500, description: 'Erreur API Gemini'),
         ]
     )]
-    public function generateAdvice(Request $request)
+    public function generateAdvice(GenerateAiAdviceRequest $request): JsonResponse
     {
         $user = $request->user();
-
-        // Récupérer les 5 derniers symptômes de l'utilisateur
-        $symptoms = $user->symptoms()->latest()->take(5)->get();
+        $limit = $request->validated('limit') ?? 5;
+        $symptoms = $user->symptoms()
+            ->orderByDesc('date_recorded')
+            ->orderByDesc('id')
+            ->take($limit)
+            ->get();
 
         if ($symptoms->isEmpty()) {
             return $this->error([], 'Vous n\'avez aucun symptôme enregistré à analyser.', 400);
         }
 
-        // Préparer le prompt pour l'IA
-        $symptomsList = $symptoms->pluck('name')->implode(', ');
-        $prompt = "Tu es un assistant médical de premier niveau. L'utilisateur signale les symptômes suivants : {$symptomsList}. Donne un conseil général court (3 lignes maximum). Termine toujours en précisant que ce conseil ne remplace pas une vraie consultation médicale.";
+        $symptomLines = $symptoms
+            ->map(fn ($symptom) => sprintf(
+                '- %s (gravite: %s%s)',
+                $symptom->name,
+                $symptom->severity,
+                $symptom->description ? ', description: '.$symptom->description : ''
+            ))
+            ->implode("\n");
 
-        $apiKey = env('GEMINI_API_KEY');
+        $prompt = <<<PROMPT
+User symptoms:
+{$symptomLines}
+
+Provide general wellness advice only.
+Do not provide a medical diagnosis.
+Keep the answer concise and remind the user to consult a doctor if symptoms persist or worsen.
+PROMPT;
+
+        $apiKey = (string) config('services.gemini.api_key');
+
+        if ($apiKey === '') {
+            return $this->error([], 'La clé API Gemini est absente.', 500);
+        }
 
         try {
-            // Appel à l'API Gemini
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-            ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}", [
-                'contents' => [
-                    ['parts' => [['text' => $prompt]]]
+            ])->timeout(20)->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}",
+                [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]],
+                    ],
                 ]
-            ]);
+            );
 
-            if ($response->successful()) {
-                // Extraire le texte de la réponse JSON de Gemini
-                $adviceText = $response->json('candidates.0.content.parts.0.text');
-
-                // US-07 : Sauvegarder le conseil dans la base de données
-                $aiAdvice = AiAdvice::create([
-                    'user_id' => $user->id,
-                    'advice' => $adviceText,
-                    'symptoms_analyzed' => $symptoms->pluck('name')->toArray(), // Sauvegardé en JSON
-                    'generated_at' => now(),
-                ]);
-
-                return $this->success($aiAdvice, 'Conseil généré avec succès', 201);
+            if (! $response->successful()) {
+                return $this->error([
+                    'provider' => [$response->json('error.message') ?: 'La requête vers Gemini a échoué.'],
+                ], 'Échec de la connexion à l\'IA', 502);
             }
 
-            return $this->error([], 'Échec de la connexion à l\'IA', 500);
+            $adviceText = trim((string) $response->json('candidates.0.content.parts.0.text'));
 
-        } catch (\Exception $e) {
-            return $this->error([], 'Erreur technique : ' . $e->getMessage(), 500);
+            if ($adviceText === '') {
+                return $this->error([], 'Réponse IA invalide.', 502);
+            }
+
+            $aiAdvice = AiAdvice::create([
+                'user_id' => $user->id,
+                'advice' => $adviceText,
+                'symptoms_analyzed' => $symptoms->map(fn ($symptom) => [
+                    'id' => $symptom->id,
+                    'name' => $symptom->name,
+                    'severity' => $symptom->severity,
+                    'date_recorded' => optional($symptom->date_recorded)->toDateString(),
+                ])->values()->all(),
+                'generated_at' => now(),
+            ]);
+
+            return $this->success([
+                'id' => $aiAdvice->id,
+                'advice' => $aiAdvice->advice,
+                'generated_at' => $aiAdvice->generated_at,
+                'symptoms_analyzed' => $aiAdvice->symptoms_analyzed,
+            ], 'Conseil généré avec succès', 201);
+        } catch (\Throwable $exception) {
+            return $this->error([], 'Erreur technique : '.$exception->getMessage(), 500);
         }
     }
 
-    // Afficher l'historique des conseils
     #[OA\Get(
-        path: '/api/ai-advice',
+        path: '/api/ai/health-advice/history',
         summary: 'Consulter l historique des conseils IA',
         tags: ['Intelligence Artificielle'],
         security: [['bearerAuth' => []]],
@@ -84,9 +120,10 @@ class AiAdviceController extends Controller
             new OA\Response(response: 401, description: 'Non autorise'),
         ]
     )]
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $advices = $request->user()->aiAdvices()->orderBy('generated_at', 'desc')->get();
+        $advices = $request->user()->aiAdvices()->orderByDesc('generated_at')->get();
+
         return $this->success($advices, 'Historique des conseils IA');
     }
 }

@@ -2,24 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
-    use ApiResponse; // Utilisation de notre structure JSON unifiée
+    use ApiResponse;
 
-    // US-01 : S'inscrire
-    public function register(Request $request)
+    #[OA\Post(
+        path: '/api/register',
+        summary: 'Creer un compte utilisateur',
+        tags: ['Authentification'],
+        responses: [
+            new OA\Response(response: 201, description: 'Compte cree'),
+            new OA\Response(response: 422, description: 'Erreur de validation'),
+        ]
+    )]
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],
@@ -31,44 +39,66 @@ class AuthController extends Controller
 
         return $this->successResponse([
             'user' => $user,
-            'token' => $token
+            'token' => $token,
         ], 'Compte créé avec succès', 201);
     }
 
-    // US-02 : Se connecter
-    public function login(Request $request)
+    #[OA\Post(
+        path: '/api/login',
+        summary: 'Obtenir un token Sanctum',
+        tags: ['Authentification'],
+        responses: [
+            new OA\Response(response: 200, description: 'Connexion reussie'),
+            new OA\Response(response: 401, description: 'Non autorise'),
+        ]
+    )]
+    public function login(LoginRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
+        $credentials = $request->validated();
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return $this->errorResponse(['auth' => 'Identifiants incorrects'], 'Non autorisé', 401);
+        if (! Auth::attempt($credentials)) {
+            return $this->errorResponse(['auth' => ['Identifiants incorrects']], 'Non autorisé', 401);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
-
-        // Supprimer les anciens tokens (optionnel mais bonne pratique)
+        $user = User::where('email', $credentials['email'])->firstOrFail();
         $user->tokens()->delete();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return $this->successResponse([
             'user' => $user,
-            'token' => $token
+            'token' => $token,
         ], 'Connexion réussie');
     }
 
-    // Révoquer le token actif
-    public function logout(Request $request)
+    #[OA\Post(
+        path: '/api/logout',
+        summary: 'Revoquer le token actif',
+        tags: ['Authentification'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Deconnexion reussie'),
+            new OA\Response(response: 401, description: 'Non autorise'),
+        ]
+    )]
+    public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()?->delete();
+
         return $this->successResponse([], 'Déconnexion réussie');
     }
 
-    // Infos de l'utilisateur connecté
-    public function me(Request $request)
+    #[OA\Get(
+        path: '/api/me',
+        summary: 'Recuperer l utilisateur connecte',
+        tags: ['Authentification'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Profil recupere'),
+            new OA\Response(response: 401, description: 'Non autorise'),
+        ]
+    )]
+    public function me(Request $request): JsonResponse
     {
         return $this->successResponse($request->user(), 'Profil récupéré');
     }

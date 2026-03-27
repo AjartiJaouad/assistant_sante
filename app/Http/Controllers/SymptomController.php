@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Symptom;
-use Illuminate\Http\Request;
 use App\Http\Requests\StoreSymptomRequest;
+use App\Http\Requests\UpdateSymptomRequest;
+use App\Models\Symptom;
 use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class SymptomController extends Controller
@@ -22,10 +24,10 @@ class SymptomController extends Controller
             new OA\Response(response: 401, description: 'Non autorise'),
         ]
     )]
-    // Lister les symptômes de l'utilisateur connecté
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $symptoms = $request->user()->symptoms()->orderBy('date_recorded', 'desc')->get();
+        $symptoms = $request->user()->symptoms()->orderByDesc('date_recorded')->orderByDesc('id')->get();
+
         return $this->success($symptoms, 'Symptômes récupérés avec succès');
     }
 
@@ -37,12 +39,13 @@ class SymptomController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['name', 'severity'],
+                required: ['name', 'severity', 'date_recorded'],
                 properties: [
                     new OA\Property(property: 'name', type: 'string', example: 'Maux de tete'),
                     new OA\Property(property: 'severity', type: 'string', enum: ['mild', 'moderate', 'severe']),
                     new OA\Property(property: 'description', type: 'string', example: 'Douleur persistante'),
                     new OA\Property(property: 'date_recorded', type: 'string', format: 'date', example: '2026-03-26'),
+                    new OA\Property(property: 'notes', type: 'string', example: 'Hydratation faible'),
                 ]
             )
         ),
@@ -50,49 +53,68 @@ class SymptomController extends Controller
             new OA\Response(response: 201, description: 'Symptome enregistre'),
         ]
     )]
-
-    // Ajouter un symptôme
-    public function store(StoreSymptomRequest $request)
+    public function store(StoreSymptomRequest $request): JsonResponse
     {
         $symptom = $request->user()->symptoms()->create($request->validated());
+
         return $this->success($symptom, 'Symptôme enregistré avec succès', 201);
     }
 
-    // Détail d'un symptôme
-    public function show(Request $request, $id)
+    #[OA\Get(
+        path: '/api/symptoms/{id}',
+        summary: 'Afficher un symptome',
+        tags: ['Symptomes'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Detail du symptome'),
+            new OA\Response(response: 404, description: 'Symptome introuvable'),
+        ]
+    )]
+    public function show(Request $request, int $id): JsonResponse
     {
-        $symptom = $request->user()->symptoms()->find($id);
-
-        if (!$symptom) {
-            return $this->error([], 'Symptôme introuvable', 404);
-        }
+        $symptom = $this->findUserSymptom($request, $id);
 
         return $this->success($symptom, 'Détail du symptôme récupéré');
     }
 
-    // Modifier un symptôme
-    public function update(StoreSymptomRequest $request, $id)
+    #[OA\Put(
+        path: '/api/symptoms/{id}',
+        summary: 'Modifier un symptome',
+        tags: ['Symptomes'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Symptome mis a jour'),
+            new OA\Response(response: 422, description: 'Erreur de validation'),
+        ]
+    )]
+    public function update(UpdateSymptomRequest $request, int $id): JsonResponse
     {
-        $symptom = $request->user()->symptoms()->find($id);
-
-        if (!$symptom) {
-            return $this->error([], 'Symptôme introuvable', 404);
-        }
-
+        $symptom = $this->findUserSymptom($request, $id);
         $symptom->update($request->validated());
-        return $this->success($symptom, 'Symptôme mis à jour avec succès');
+
+        return $this->success($symptom->fresh(), 'Symptôme mis à jour avec succès');
     }
 
-    // Supprimer un symptôme
-    public function destroy(Request $request, $id)
+    #[OA\Delete(
+        path: '/api/symptoms/{id}',
+        summary: 'Supprimer un symptome',
+        tags: ['Symptomes'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Symptome supprime'),
+            new OA\Response(response: 404, description: 'Symptome introuvable'),
+        ]
+    )]
+    public function destroy(Request $request, int $id): JsonResponse
     {
-        $symptom = $request->user()->symptoms()->find($id);
-
-        if (!$symptom) {
-            return $this->error([], 'Symptôme introuvable', 404);
-        }
-
+        $symptom = $this->findUserSymptom($request, $id);
         $symptom->delete();
+
         return $this->success([], 'Symptôme supprimé avec succès');
+    }
+
+    private function findUserSymptom(Request $request, int $id): Symptom
+    {
+        return $request->user()->symptoms()->findOrFail($id);
     }
 }
