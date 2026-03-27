@@ -1,0 +1,162 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Health Assistant API Documentation",
+        "description": "Documentation de l API Assistant Sante avec IA",
+        "contact": {
+            "email": "support@healthapi.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/api/ai-advice": {
+            "get": {
+                "tags": [
+                    "Intelligence Artificielle"
+                ],
+                "summary": "Consulter l historique des conseils IA",
+                "operationId": "7231fdba5ebfab35f0fc5f1f5c908570",
+                "responses": {
+                    "200": {
+                        "description": "Liste de l historique des conseils"
+                    },
+                    "401": {
+                        "description": "Non autorise"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Intelligence Artificielle"
+                ],
+                "summary": "Generer un conseil sante via IA Gemini",
+                "operationId": "1a033b93c6740c7a8e7cb20f9aef7945",
+                "responses": {
+                    "201": {
+                        "description": "Conseil genere et sauvegarde"
+                    },
+                    "400": {
+                        "description": "Aucun symptome trouve"
+                    },
+                    "500": {
+                        "description": "Erreur API Gemini"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/symptoms": {
+            "get": {
+                "tags": [
+                    "Symptomes"
+                ],
+                "summary": "Lister les symptomes de l utilisateur",
+                "operationId": "c642625cf5f81e63f1d5ae694f0fc9c4",
+                "responses": {
+                    "200": {
+                        "description": "Liste des symptomes"
+                    },
+                    "401": {
+                        "description": "Non autorise"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Symptomes"
+                ],
+                "summary": "Enregistrer un nouveau symptome",
+                "operationId": "dca672aeac264e3647552a3646df8aea",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "severity"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Maux de tete"
+                                    },
+                                    "severity": {
+                                        "type": "string",
+                                        "enum": [
+                                            "mild",
+                                            "moderate",
+                                            "severe"
+                                        ]
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Douleur persistante"
+                                    },
+                                    "date_recorded": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-03-26"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Symptome enregistre"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Utilisez un token Sanctum (Bearer)",
+                "name": "Authorization",
+                "in": "header",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Intelligence Artificielle",
+            "description": "Intelligence Artificielle"
+        },
+        {
+            "name": "Symptomes",
+            "description": "Symptomes"
+        }
+    ]
+}
