@@ -15,33 +15,13 @@
         }
     ],
     "paths": {
-        "/api/ai-advice": {
-            "get": {
-                "tags": [
-                    "Intelligence Artificielle"
-                ],
-                "summary": "Consulter l historique des conseils IA",
-                "operationId": "7231fdba5ebfab35f0fc5f1f5c908570",
-                "responses": {
-                    "200": {
-                        "description": "Liste de l historique des conseils"
-                    },
-                    "401": {
-                        "description": "Non autorise"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
+        "/api/ai/health-advice": {
             "post": {
                 "tags": [
                     "Intelligence Artificielle"
                 ],
                 "summary": "Generer un conseil sante via IA Gemini",
-                "operationId": "1a033b93c6740c7a8e7cb20f9aef7945",
+                "operationId": "6de43312149827b5b012307e186dffbf",
                 "responses": {
                     "201": {
                         "description": "Conseil genere et sauvegarde"
@@ -58,6 +38,252 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/ai/health-advice/history": {
+            "get": {
+                "tags": [
+                    "Intelligence Artificielle"
+                ],
+                "summary": "Consulter l historique des conseils IA",
+                "operationId": "f15d59d4ee8cf944877c2b996baeb598",
+                "responses": {
+                    "200": {
+                        "description": "Liste de l historique des conseils"
+                    },
+                    "401": {
+                        "description": "Non autorise"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments": {
+            "get": {
+                "tags": [
+                    "Rendez-vous"
+                ],
+                "summary": "Lister les rendez-vous de l utilisateur",
+                "operationId": "09fd012ab97514481bde57bbeac2699b",
+                "responses": {
+                    "200": {
+                        "description": "Liste des rendez-vous"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Rendez-vous"
+                ],
+                "summary": "Creer un rendez-vous",
+                "operationId": "15017f04a457b26e2a870c8a011a407a",
+                "responses": {
+                    "201": {
+                        "description": "Rendez-vous cree"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/{id}": {
+            "get": {
+                "tags": [
+                    "Rendez-vous"
+                ],
+                "summary": "Afficher un rendez-vous",
+                "operationId": "13b46cd03a1dae29a4c4dd6e756d37da",
+                "responses": {
+                    "200": {
+                        "description": "Detail du rendez-vous"
+                    },
+                    "404": {
+                        "description": "Rendez-vous introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Rendez-vous"
+                ],
+                "summary": "Modifier un rendez-vous",
+                "operationId": "a779a3a6175fee8a68b75461718a1ec3",
+                "responses": {
+                    "200": {
+                        "description": "Rendez-vous mis a jour"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Rendez-vous"
+                ],
+                "summary": "Supprimer un rendez-vous",
+                "operationId": "cc5727c249d22f6719923c09625213e0",
+                "responses": {
+                    "200": {
+                        "description": "Rendez-vous supprime"
+                    },
+                    "404": {
+                        "description": "Rendez-vous introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Creer un compte utilisateur",
+                "operationId": "8a56853624e025573120a09a4c75d468",
+                "responses": {
+                    "201": {
+                        "description": "Compte cree"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Obtenir un token Sanctum",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "responses": {
+                    "200": {
+                        "description": "Connexion reussie"
+                    },
+                    "401": {
+                        "description": "Non autorise"
+                    }
+                }
+            }
+        },
+        "/api/logout": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Revoquer le token actif",
+                "operationId": "fe8f3429cd6979b3b4517e186505f9f9",
+                "responses": {
+                    "200": {
+                        "description": "Deconnexion reussie"
+                    },
+                    "401": {
+                        "description": "Non autorise"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/me": {
+            "get": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Recuperer l utilisateur connecte",
+                "operationId": "9d9bc556f927575aa492a88c28fe5908",
+                "responses": {
+                    "200": {
+                        "description": "Profil recupere"
+                    },
+                    "401": {
+                        "description": "Non autorise"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/doctors": {
+            "get": {
+                "tags": [
+                    "Medecins"
+                ],
+                "summary": "Lister les medecins",
+                "operationId": "f2faa955668b3e6887792008f2d09661",
+                "responses": {
+                    "200": {
+                        "description": "Liste des medecins"
+                    }
+                }
+            }
+        },
+        "/api/doctors/search": {
+            "get": {
+                "tags": [
+                    "Medecins"
+                ],
+                "summary": "Rechercher un medecin par specialite ou ville",
+                "operationId": "bf66b358a701bef06195c2abedb8c512",
+                "responses": {
+                    "200": {
+                        "description": "Resultats de recherche"
+                    }
+                }
+            }
+        },
+        "/api/doctors/{id}": {
+            "get": {
+                "tags": [
+                    "Medecins"
+                ],
+                "summary": "Afficher le detail d un medecin",
+                "operationId": "800e90f10564a8eec88cd8284dac12a2",
+                "responses": {
+                    "200": {
+                        "description": "Detail du medecin"
+                    },
+                    "404": {
+                        "description": "Medecin introuvable"
+                    }
+                }
             }
         },
         "/api/symptoms": {
@@ -94,7 +320,8 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "severity"
+                                    "severity",
+                                    "date_recorded"
                                 ],
                                 "properties": {
                                     "name": {
@@ -117,6 +344,10 @@
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-03-26"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Hydratation faible"
                                     }
                                 },
                                 "type": "object"
@@ -127,6 +358,68 @@
                 "responses": {
                     "201": {
                         "description": "Symptome enregistre"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/symptoms/{id}": {
+            "get": {
+                "tags": [
+                    "Symptomes"
+                ],
+                "summary": "Afficher un symptome",
+                "operationId": "82030e18b2eb408129723220f2794b53",
+                "responses": {
+                    "200": {
+                        "description": "Detail du symptome"
+                    },
+                    "404": {
+                        "description": "Symptome introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Symptomes"
+                ],
+                "summary": "Modifier un symptome",
+                "operationId": "63780be5221352d0d53bce52c63126e7",
+                "responses": {
+                    "200": {
+                        "description": "Symptome mis a jour"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Symptomes"
+                ],
+                "summary": "Supprimer un symptome",
+                "operationId": "b42f1b4ee97bd78adcba83865a921dd2",
+                "responses": {
+                    "200": {
+                        "description": "Symptome supprime"
+                    },
+                    "404": {
+                        "description": "Symptome introuvable"
                     }
                 },
                 "security": [
@@ -153,6 +446,18 @@
         {
             "name": "Intelligence Artificielle",
             "description": "Intelligence Artificielle"
+        },
+        {
+            "name": "Rendez-vous",
+            "description": "Rendez-vous"
+        },
+        {
+            "name": "Authentification",
+            "description": "Authentification"
+        },
+        {
+            "name": "Medecins",
+            "description": "Medecins"
         },
         {
             "name": "Symptomes",
