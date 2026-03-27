@@ -1,0 +1,49 @@
+classDiagram
+    class User {
+        +id
+        +name
+        +email
+        +password
+    }
+
+    class Symptom {
+        +id
+        +user_id
+        +name
+        +severity
+        +description
+        +date_recorded
+        +notes
+    }
+
+    class Doctor {
+        +id
+        +name
+        +specialty
+        +city
+        +years_of_experience
+        +consultation_price
+        +available_days
+    }
+
+    class Appointment {
+        +id
+        +user_id
+        +doctor_id
+        +appointment_date
+        +status
+        +notes
+    }
+
+    class AiAdvice {
+        +id
+        +user_id
+        +advice
+        +symptoms_analyzed
+        +generated_at
+    }
+
+    User "1" --> "*" Symptom
+    User "1" --> "*" Appointment
+    User "1" --> "*" AiAdvice
+    Doctor "1" --> "*" Appointment
